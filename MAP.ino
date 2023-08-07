@@ -1,8 +1,10 @@
-#define HASHSIZE 10
+#define CAPACITY 10
 
-String KEYS[HASHSIZE];
-String VALUES[HASHSIZE];
+String KEYS[CAPACITY];
+String VALUES[CAPACITY];
+String scanned[CAPACITY];
 int size = 0;
+int sizeScanned = 0;
 
 void insert(String key, String value) {
     // Check if the key already exists
@@ -40,4 +42,13 @@ void elim(String key) {
             return; // Exit the function after deletion
         }
     }
+}
+
+int checkIfDuplicate(String value, String* ARRAY){
+  for (int i = 0; i < totalItems; i++){
+    if (ARRAY[i].equals(value)){
+      return i;
+    }
+  }
+  return -1;
 }

@@ -1,43 +1,63 @@
 // Libraries 
 #include <SPI.h>
-#include <MFRC522.h>
 
-// RFID pins
-#define RST_RFID 5
-#define SS_RFID 53
+String UID;
+int totalItems = 0;
 
-MFRC522 RFID_READER(SS_RFID, RST_RFID);
+// Different states for the device
+enum device
+{
+  WELCOME,
+  MENU,
+  SCAN,
+  NAME_INPUT,
+  CHECKLIST,
+  IDK
+};
 
+// Starting state
+enum device state = WELCOME;
+
+void resetSPI(){
+  pinMode(53, OUTPUT);
+  pinMode(11, OUTPUT);
+  pinMode(8, OUTPUT);
+  digitalWrite(53, HIGH);
+  digitalWrite(11, HIGH);
+  digitalWrite(8, HIGH);
+}
 
 void setup() {
   Serial.begin(9600);
   SPI.begin();
-  RFID_READER.PCD_Init();
+  MFRC522Setup();
+  TFTSetup();
 }
 
 void loop() {
-
-  if (!RFID_READER.PICC_IsNewCardPresent()){
-    Serial.println("No tag found!");
-    return;
+  resetSPI();
+  if (state == WELCOME){
+    welcomeScreen();
+    state = MENU;
+    delay(5000);
+    clearScreen();
   }
 
-  if (!RFID_READER.PICC_ReadCardSerial()){
-    Serial.println("Can't get data on tag!");
-    return;
+  if (state == MENU){
+    menuScreen();
   }
 
-  String UID;
-  Serial.print("UID:");
-  for (byte i = 0; i < RFID_READER.uid.size; i++){
-    // If byte less than 0x10, print ' 0'. Print ' ' otherwise 
-    Serial.print(RFID_READER.uid.uidByte[i] < 0x10 ? " 0": " ");
-    Serial.print(RFID_READER.uid.uidByte[i], HEX);
-    UID += String(RFID_READER.uid.uidByte[i], HEX);
+  if (state == SCAN){
+    scanScreen();
   }
-  Serial.println();
-
-  insert(UID, "Wallet");
-  Serial.println(lookup(UID)); // Should print 'Wallet'
-  RFID_READER.PICC_HaltA();
+  if (state == NAME_INPUT){
+    clearScreen();
+    inputScreen();
+  }
+  if (state == CHECKLIST){
+    clearScreen();
+    showChecklist();
+  }
+  
 }
+
