@@ -12,7 +12,7 @@ enum device
   SCAN,
   NAME_INPUT,
   CHECKLIST,
-  IDK
+  REMOVE
 };
 
 // Starting state
@@ -57,6 +57,10 @@ void loop() {
   if (state == CHECKLIST){
     clearScreen();
     showChecklist();
+  }
+  if (state == REMOVE){
+    clearScreen();
+    removeItemsScreen();
   }
   
 }

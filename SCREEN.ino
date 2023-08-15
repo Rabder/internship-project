@@ -101,41 +101,46 @@ void drawArch(int16_t x, int16_t y, int16_t radius, int16_t startAngle, int16_t 
 }
 
 void menuScreen() {
+  int widthButtons = 180;
+  int heightButtons = 40;
+  clearScreen();
   XPT2046Setup();
   bool flag = false;
-  int x = 160 - 70;
+  int x = 160 - (widthButtons / 2);
   int y = 60;
   int textX;
   int textY;
-  String buttonText[] = {"Checklist", "Scan new item", "Remove item"};
+  String buttonText[] = {"Checklist", "Scan item", "Remove item"};
   for (int i = 0; i < 3; i++){
-    drawButton(x, y, 140, 30, ILI9341_BLACK, ILI9341_BLACK, ILI9341_BLACK);
+    drawButton(x, y, widthButtons, heightButtons, ILI9341_BLACK, ILI9341_BLACK, ILI9341_BLACK);
     tft.setCursor(x + 30, y + 10);
     tft.setTextSize(2);
     tft.setTextColor(ILI9341_WHITE);
     tft.println(buttonText[i]);
-    y += 40;
+    y += heightButtons + 10;
   }
+  y = 60;
   while (true){
-    if (TouchButton(x, 60, 140, 30)){
+    if (TouchButton(x, y, widthButtons, heightButtons)){
        Serial.println("CHECKLIST");
     state = CHECKLIST;
     break;
     }
-    else if (TouchButton(x, 100, 140, 30)){
+    else if (TouchButton(x, y + heightButtons + 10, widthButtons, heightButtons)){
       Serial.println("SCAN");
       state = SCAN;
       break;
     }
-    else if (TouchButton(x, 140, 140, 30)){
-       Serial.println("IDK");
-      state = IDK;
+    else if (TouchButton(x, y + 2 * (heightButtons + 10), widthButtons, heightButtons)){
+       Serial.println("REMOVE");
+      state = REMOVE;
       break;
     }
   }
 }
 
 void welcomeScreen(){
+  clearScreen();
   tft.setTextSize(4);
   tft.setTextColor(ILI9341_BLACK);  
   int x = 160 - getCenter("Checklist!", 0);
@@ -182,10 +187,22 @@ void scanScreen(){
   int x = 160 - getCenter(text, 0);
   tft.setCursor(x, 5);
   tft.println(text);
+
+  int16_t buttonX = 310 - 30;
+  int16_t buttonY = 230 - 30;
+  drawButton(buttonX, buttonY, 30, 30, ILI9341_BLACK, ILI9341_BLACK, ILI9341_BLACK);
+
   while(!readTag()){
+    if (TouchButton(buttonX, buttonY, 30, 30)){
+        state = MENU;
+        break;
+      }
     scanScreenAnimation();
   }
-  state = NAME_INPUT;
+  if (state != MENU){
+    state = NAME_INPUT;
+  }
+  
 }
 
 void continueOrStop(){
@@ -199,7 +216,7 @@ void continueOrStop(){
       state = SCAN;
   }
     else{
-      state =  CHECKLIST;
+      state =  MENU;
     }
 }
 
@@ -214,8 +231,26 @@ void inputScreen(){
 }
 
   void showChecklist(){
+
+    // If there are no items, print that there are no items
+    if (totalItems < 1){
+      tft.setTextSize(2);
+      tft.setTextColor(ILI9341_BLACK, ILI9341_WHITE);
+      tft.setCursor(5, 5);
+      tft.println("No items scanned!");
+      int16_t buttonX = 310 - 30;
+      int16_t buttonY = 230 - 30;
+      drawButton(buttonX, buttonY, 30, 30, ILI9341_BLACK, ILI9341_BLACK, ILI9341_BLACK);
+      while (true){
+        if (TouchButton(buttonX, buttonY, 30, 30)){
+          state = MENU;
+          break;
+        }
+      }
+    }
     
-    String text = "Items";
+    else{
+      String text = "Items";
     tft.setTextSize(2);
     tft.setTextColor(ILI9341_BLACK);
     int16_t x = 5;
@@ -230,10 +265,19 @@ void inputScreen(){
       y += 20;
     }
     scanChecklist();
+    }
   }
 
  void setCursor(int16_t x, int16_t y){
    tft.setCursor(x, y);
+ }
+
+ void setTextColor(uint16_t color){
+   tft.setTextColor(color);
+ }
+
+ void textPrint(String text){
+   tft.println(text);
  }
 
   void confirmationScreen(){
@@ -269,5 +313,72 @@ void inputScreen(){
     }
     continueOrStop();
   }
+
+void removeItemsScreen(){
+    clearScreen();
+    if (totalItems < 1){
+      tft.setTextSize(2);
+      tft.setTextColor(ILI9341_BLACK, ILI9341_WHITE);
+      tft.setCursor(5, 5);
+      tft.println("No items scanned!");
+    }
+
+    bool flag;
+    String text = "Items";
+    tft.setTextSize(2);
+    tft.setTextColor(ILI9341_BLACK);
+    int16_t x = 10;
+    int16_t y = 5;
+
+    for (int i = 0; i < totalItems; i++){
+      tft.setCursor(x + 50, y + 10);
+      tft.println(KEYS[i]);
+      Serial.println(KEYS[i]);
+      tft.setCursor(x + 50, y);
+      drawButton(x, y, 30, 30, ILI9341_BLACK, ILI9341_BLACK, ILI9341_BLACK);
+      y += 40;
+    }
+    
+    removeItemScreen2();
+}
+
+bool removeItemScreen2() {
+  int16_t startY = 5;
+  int16_t x = 10;
+  int16_t buttonX = 310 - 30;
+  int16_t buttonY = 230 - 30;
+  drawButton(buttonX, buttonY, 30, 30, ILI9341_BLACK, ILI9341_BLACK, ILI9341_BLACK);
+    while(true){
+      if (TouchButton(buttonX, buttonY, 30, 30)){
+        state = MENU;
+        break;
+      }
+      for (int i = 0; i < totalItems; i++){
+        if (TouchButton(x, startY + 40 * i, 30, 30)){
+          return confirmRemoval(i);
+        }
+      }
+    }
+}
+
+bool confirmRemoval(int i) {
+  clearScreen();
+  tft.setTextSize(2);
+  tft.setTextColor(ILI9341_BLACK, ILI9341_WHITE);
+  String line1 = "Remove " + KEYS[i] + " ?";
+  clearScreen();
+  tft.setCursor(5, 5);
+  tft.println(line1);
+  if (confirmationButtons()) {
+    elim(VALUES[i]);
+    totalItems--;
+    Serial.println("REMOVED");
+    return true;
+  }
+  else{
+    Serial.println("NOTHING");
+    return false;
+  }
+}
 
 

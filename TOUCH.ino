@@ -5,7 +5,6 @@
 #define TFT_DC    10     // TFT DC  pin is connected to arduino pin 10
 #define TOUCH_CS 24
 
-#define coordOffset 
 
 
 void XPT2046Setup(){

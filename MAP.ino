@@ -1,3 +1,5 @@
+#include <EEPROM.h>
+
 #define CAPACITY 10
 
 String KEYS[CAPACITY];
@@ -5,6 +7,30 @@ String VALUES[CAPACITY];
 String scanned[CAPACITY];
 int size = 0;
 int sizeScanned = 0;
+
+
+void writeEEPROM(int addrOff, const String &str){
+  byte length = str.length();
+  EEPROM.write(addrOff, length);
+  for (int i = 0; i < length; i++)
+  {
+    EEPROM.write(addrOff + 1 + i, str[i]);
+  }
+}
+
+String readStringFromEEPROM(int addrOffset)
+{
+  int newaddrOff = addrOffset;
+  int newStrLen = EEPROM.read(addrOffset);
+  char data[newStrLen + 1];
+  for (int i = 0; i < newStrLen; i++)
+  {
+    data[i] = EEPROM.read(addrOffset + 1 + i);
+  }
+  data[newStrLen] = '\ 0'; // !!! NOTE !!! Remove the space between the slash "/" and "0" (I've added a space because otherwise there is a display bug)
+  addrOffset = newaddrOff;
+  return String(data);
+}
 
 void insert(String key, String value) {
     // Check if the key already exists
@@ -30,9 +56,9 @@ String lookup(String key) {
     return " ";
 }
 
-void elim(String key) {
+void elim(String value) {
     for (int i = 0; i < size; i++) {
-        if (KEYS[i].equals(key)) {
+        if (VALUES[i].equals(value)) {
             // Shift elements to the left to fill the gap left by the deleted key
             for (int j = i; j < size - 1; j++) {
                 KEYS[j] = KEYS[j + 1];
@@ -51,4 +77,11 @@ int checkIfDuplicate(String value, String* ARRAY){
     }
   }
   return -1;
+}
+
+void resetChecklist(){
+  sizeScanned = 0;
+  for (int i = 0; i < CAPACITY; i++){
+    scanned[i] = "\0";
+  }
 }

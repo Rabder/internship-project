@@ -90,7 +90,20 @@ bool readTagChecklist(){
     int16_t y = 5;
     int16_t newx;
     int16_t newy;
+
+    // Draw button to go back to main menu
+    int16_t buttonX = 310 - 100;
+    int16_t buttonY = 10;
+    drawButton(buttonX, buttonY, 100, 30, 0x03e0, 0x03e0, 0x03e0);
+
     while (true){
+
+      if (TouchButton(buttonX, buttonY, 100, 30)){
+        resetChecklist();
+        state = MENU;
+        break;
+      }
+
       if (RFID_READER.PICC_IsNewCardPresent() && RFID_READER.PICC_ReadCardSerial()){
       Serial.print("UID:");
       for (byte i = 0; i < RFID_READER.uid.size; i++){
